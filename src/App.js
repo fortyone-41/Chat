@@ -2,12 +2,13 @@ import React from 'react';
 import {Route} from 'react-router-dom'
 
 import './styles/index.scss'
-import {Auth} from "./pages/index";
+import {Auth, Home} from "./pages/index";
 
 function App() {
   return (
     <div className="wrapper">
-      <Auth />     
+      <Route exact path={["/", "/login", "/register"]} component={Auth} />
+      <Route exact path="/im" component={Home} />    
     </div>
   );
 }

@@ -8,7 +8,7 @@ const RegistrForm = () => {
     const onFinish = (values) => {
         console.log('Received values of form: ', values);
     };
-    const success = true;
+    const success = false;
     return (
         < section className="auth" >
             <div className="auth__content">
