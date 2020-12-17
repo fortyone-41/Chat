@@ -7,7 +7,7 @@ const rooms = {
     'messages': ['hello']
 };
 
-let users = [{ id: 1, name: 'viktor' }, { id: 2, name: 'vladimir' }];
+let users = [{ id: 1, name: 'viktor1' }, { id: 2, name: 'vladimir1' }];
 
 app.get('/rooms', function (req, res) {
     res.json(rooms);
