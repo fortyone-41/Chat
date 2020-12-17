@@ -3,14 +3,18 @@ const express = require('express');
 const app = express();
 
 const rooms = {
-    'rooms': [],
-    'messages': ['hello']
+    rooms: [],
+    messages: ['hello1'],
 };
 
-let users = [{ id: 1, name: 'viktor1' }, { id: 2, name: 'vladimir1' }];
 
-app.get('/rooms', function (req, res) {
+app.get('/rooms', (req, res) => {
     res.json(rooms);
 });
 
-app.listen(9999);
+app.listen(9999, (err) => {
+    if (err) {
+        throw err;
+    }
+    console.log('Server started')
+});
