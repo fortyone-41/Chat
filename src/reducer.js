@@ -3,12 +3,12 @@ export default (state, action) => {
         case 'JOINED':
             return {
                 ...state,
-                joined: true,
+                auth: true,
                 userName: action.payload.userName,
                 roomId: action.payload.roomId,
             }
         case 'SET_DATA':
-            return {
+            return { 
                 ...state,
                 users: action.payload.users,
                 messages: action.payload.messages,
@@ -25,6 +25,12 @@ export default (state, action) => {
                 ...state,
                 messages: [...state.messages, action.payload],
             };
+
+        case 'GET_ROOMS':
+            return {
+                ...state,
+                rooms: action.payload.data,
+            }
         default:
             return state;
     }

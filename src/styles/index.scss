@@ -67,7 +67,7 @@ html,
   flex: 1;
   padding: 30px;
 }
-
+ 
 .messages {
   flex: 1;
   height: calc(100% - 155px);
@@ -76,6 +76,10 @@ html,
 
 .message {
   margin-bottom: 20px;
+  &--isme {
+    display: flex;
+    flex-direction: row-reverse;
+  }
 }
 
 .message p {

@@ -11,18 +11,35 @@ import { Button } from 'antd';
 
 
 
-
-
 function App() {
   const [state, dispatch] = React.useReducer(reducer, {
-    joined: false,
+    auth: false,
     roomId: null,
     userName: null,
     users: [],
     messages: [],
+    rooms: [],
   })
 
+
+  const getRooms = async () => {
+    const data2 = await axios.get(`/get_rooms`);
+    dispatch({
+      type: 'GET_ROOMS',
+      payload: data2,
+    })
+  }
+
   const onLogin = async (values) => {
+    const { data } = await axios.get(`/rooms/${values.roomId}`);
+    dispatch({
+      type: 'SET_DATA',
+      payload: data,
+    });
+    getRooms()
+  }
+
+  const onJoin = async (values) => {
     dispatch({
       type: 'JOINED',
       payload: values,
@@ -33,6 +50,7 @@ function App() {
       type: 'SET_DATA',
       payload: data,
     });
+    getRooms()
   }
 
   const setUsers = (users) => {
@@ -40,7 +58,12 @@ function App() {
       type: 'SET_USERS',
       payload: users,
     });
+
   };
+
+  React.useEffect(() => {
+    getRooms()
+  })
 
   const addMessage = (message) => {
     dispatch({
@@ -50,15 +73,15 @@ function App() {
   };
 
   React.useEffect(() => {
+    socket.on('ROOM:JOINED', setUsers)
     socket.on('ROOM:SET_USERS', setUsers);
     socket.on('ROOM:NEW_MESSAGE', addMessage);
   }, [])
 
   return (
     <div className="wrapper">
-
-      {!state.joined ? <Route exact path={["/", "/login", "/register"]} render={(props) => <Auth onLogin={onLogin} socket={socket} />} /> : <Home {...state} onAddMessage={addMessage} />}
-
+       <Route exact path="/" render={() =><Auth onLogin={onLogin} socket={socket} /> } />
+        <Route exact path="/room" render={() => <Home {...state} onAddMessage={addMessage} onJoin={onJoin}/> } />
     </div>
   );
 }

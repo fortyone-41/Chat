@@ -1,5 +1,7 @@
 import React from 'react';
 import socket from '../../../socket';
+import classNames from 'classnames'
+
 
 function Chat({ users, messages, userName, roomId, onAddMessage }) {
   const [messageValue, setMessageValue] = React.useState('');
@@ -10,15 +12,20 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
       userName,
       roomId,
       text: messageValue,
+      time: Date.now(),
     });
-    onAddMessage({ userName, text: messageValue });
+    onAddMessage({ userName, text: messageValue, time: Date.now() });
     setMessageValue('');
   };
 
   React.useEffect(() => {
     messagesRef.current.scrollTo(0, 99999);
   }, [messages]);
+
+
+
   return (
+
     <div className="chat">
       <div className="chat-users">
         Комната: <b>{roomId}</b>
@@ -33,10 +40,10 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
       <div className="chat-messages">
         <div ref={messagesRef} className="messages">
           {messages.map((message) => (
-            <div className="message">
+            <div className={classNames(`message`, { "message--isme": message.userName == userName })}>
               <p>{message.text}</p>
               <div>
-                <span>{message.userName}</span>
+                <span>User: {message.userName} -- time: {message.time}</span>
               </div>
             </div>
           ))}
