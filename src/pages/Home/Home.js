@@ -6,7 +6,7 @@ import Modal from '../../modules/Modal/Modal';
 
 
 const Home = ({ users, messages, userName, onAddMessage, onJoin, rooms }) => {
-    let i = 0;
+    let i = 0; //for array map
 
     return (
         <section className="home">

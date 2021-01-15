@@ -13,14 +13,14 @@ const io = require('socket.io')(server, {
 });
 
 const rooms = new Map();
-rooms.set(
+rooms.set(    //create room with name "1"
   "1",
   new Map([
     ['users', new Map()],
     ['messages', []],
   ]),
 );
-rooms.set(
+rooms.set(    //create room with name "2"
   "2",
   new Map([
     ['users', new Map()],
@@ -29,7 +29,7 @@ rooms.set(
 );
 app.use(express.json());
 
-app.get('/rooms/:id', (req, res) => {
+app.get('/rooms/:id', (req, res) => {   //get request for taking data in current room, if such room have
   const { id: roomId } = req.params;
   const obj = rooms.has(roomId)
     ? {
@@ -41,12 +41,12 @@ app.get('/rooms/:id', (req, res) => {
 });
 
 
-app.get('/get_rooms', (req, res) => {
+app.get('/get_rooms', (req, res) => {  //get request for taking array rooms
   res.json([...rooms.keys()]);
 });
 
 
-app.post('/rooms', (req, res) => {
+app.post('/rooms', (req, res) => {  //post request for creating new room 
   const { roomId, userName } = req.body;
   if (!rooms.has(roomId)) {
     rooms.set(
@@ -61,31 +61,25 @@ app.post('/rooms', (req, res) => {
 })
 
 io.on('connection', (socket) => {
-  socket.on('ROOM:JOIN', ({ roomId, userName }) => {
+  socket.on('ROOM:JOIN', ({ roomId, userName }) => {   //event join in room
     socket.join(roomId);
-    rooms.get(roomId).get('users').set(socket.id, userName);
-    const users = [...rooms.get(roomId).get('users').values()];
-    const messages = [...rooms.get(roomId).get('messages').values()]
-    socket.to(roomId).broadcast.emit('ROOM:JOINED', users);
+    rooms.get(roomId).get('users').set(socket.id, userName);    //writing user in room
+    const users = [...rooms.get(roomId).get('users').values()];  //get users in room
+    const messages = [...rooms.get(roomId).get('messages').values()]    //get messages in room
+    socket.to(roomId).broadcast.emit('ROOM:JOINED', users);  //refresh users list for all 
     socket.emit('ROOM:SET_USERS', users);
   })
-  socket.on('ROOM:NEW_MESSAGE', ({ roomId, userName, text, time }) => {
+  socket.on('ROOM:NEW_MESSAGE', ({ roomId, userName, text, time }) => {  //event new message
     const obj = {
       userName,
       text,
       time,
     };
-    rooms.get(roomId).get('messages').push(obj);
-    socket.to(roomId).broadcast.emit('ROOM:NEW_MESSAGE', obj);
+    rooms.get(roomId).get('messages').push(obj);  //pushing new message in array
+    socket.to(roomId).broadcast.emit('ROOM:NEW_MESSAGE', obj); //refreshing messages list
   });
-  socket.on('ROOM:REFRESH', (roomarr) => (
-    roomarr.map((room) => {
-      const users = [...rooms.get(room).get('users').values()];
-      socket.to(room).broadcast.emit('ROOM:USERS_REFRESH', users);
-    }
-  )))
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', () => {  //default event for disconneting user, and clear his data on server
     rooms.forEach((value, roomId) => {
       if (value.get('users').delete(socket.id)) {
         const users = [...value.get('users').values()];

@@ -11,14 +11,14 @@ const Auth = (props) => {
     const [userName, setUserName] = React.useState('');
     const [isLoading, setLoading] = React.useState(false);
     let history = useHistory();
-    const onFinish = async (values) => {
+    const onFinish = async (values) => {  //function inputing name
         setLoading(true);
-        localStorage.userName= values.userName;
-        history.push("/room");
+        localStorage.userName= values.userName;  //writing name in local storage
+        history.push("/room");      //going to the rooms page
     };
 
     React.useEffect(() => {
-        if(localStorage.userName !== undefined){
+        if(localStorage.userName !== undefined){  //if inputted name, going to the rooms page
             history.push("/room");
         }
     },[])

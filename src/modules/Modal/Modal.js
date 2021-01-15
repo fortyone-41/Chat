@@ -8,14 +8,14 @@ const Modal = ({onJoin}) => {
     const [roomId, setRoomId] = React.useState('');
     let history = useHistory();
     const [isLoading, setLoading] = React.useState(false);
-    const onFinish = async (values) => {
+    const onFinish = async (values) => {  //function joining in room
         setLoading(true);
         await axios.post("/rooms", values);
-
-        setTimeout(() => {
+        setTimeout(() => {      //loading current room with delay in 3sec
             setLoading(false)
-            onJoin(values); 
-            history.push("/room/"+values.roomId);
+            onJoin(values);
+            history.push("/room/"+values.roomId);  //change location on current room
+            
         },3000)
         
     };

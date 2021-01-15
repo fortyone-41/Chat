@@ -20,21 +20,12 @@ function App() {
   })
 
 
-  const getRooms = async () => {
+  const getRooms = async () => {    //get array rooms
     const data2 = await axios.get(`/get_rooms`);
-    dispatch({
+    dispatch({        //dispatching rooms in state
       type: 'GET_ROOMS',
       payload: data2,
     })
-  }
-
-  const onLogin = async (values) => {
-    const { data } = await axios.get(`/rooms/${values.roomId}`);
-    dispatch({
-      type: 'SET_DATA',
-      payload: data,
-    });
-    getRooms()
   }
 
   const onJoin = async (values) => {
@@ -43,8 +34,8 @@ function App() {
       payload: values,
     });
     socket.emit('ROOM:JOIN', values);
-    const { data } = await axios.get(`/rooms/${values.roomId}`);
-    dispatch({
+    const { data } = await axios.get(`/rooms/${values.roomId}`);      //get data from current room
+    dispatch({        //dispatching data in state
       type: 'SET_DATA',
       payload: data,
     });
@@ -72,12 +63,11 @@ function App() {
     socket.on('ROOM:SET_USERS', setUsers);
     socket.on('ROOM:NEW_MESSAGE', addMessage);
     getRooms();
-    socket.on('ROOM:USERS_REFRESH', setUsers);
   }, [])
 
   return (
     <div className="wrapper">
-       <Route exact path="/" render={() =><Auth onLogin={onLogin} socket={socket} /> } />
+       <Route exact path="/" render={() =><Auth socket={socket} /> } />  
         <Route path="/room" render={() => <Home {...state} onAddMessage={addMessage} onJoin={onJoin}/> } />
     </div>
   );

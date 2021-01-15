@@ -7,31 +7,34 @@ import { NavLink } from 'react-router-dom';
 function Chat({ users, messages, userName, roomId, onAddMessage, onJoin }) {
   const [messageValue, setMessageValue] = React.useState('');
   const messagesRef = React.useRef(null);
-  // values.roomId=roomId
-  // values.userName = localStorage.userName
-  // onJoin(values)
 
-  const onSendMessage = () => {
+  const onSendMessage = () => {  //function sending message
     let date = new Date();
     let min = date.getMinutes();
     if (min < 10) {
       min = '0' + min.toString();
     }
-    socket.emit('ROOM:NEW_MESSAGE', {
-      userName,
-      roomId,
-      text: messageValue,
-      time: date.getHours() + ':' + min,
-    });
-    onAddMessage({ userName, text: messageValue, time: date.getHours() + ':' + min });
-    setMessageValue('');
+    
+    if (messageValue === "") {
+      alert("Введите текст сообщения")
+    } else {
+      socket.emit('ROOM:NEW_MESSAGE', {   //emitting event new message
+        userName,
+        roomId,
+        text: messageValue,
+        time: date.getHours() + ':' + min,
+      });
+      onAddMessage({ userName, text: messageValue, time: date.getHours() + ':' + min });
+      setMessageValue('');
+    }
+
   };
 
   React.useEffect(() => {
     messagesRef.current.scrollTo(0, 99999);
   }, [messages]);
 
-  React.useEffect(() => {
+  React.useEffect(() => {  //checking for inputted name, if not inputted, show window with input field for inputing name
     let test;
     let values = {}
     if (localStorage.userName === undefined) {
@@ -86,15 +89,13 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin }) {
             <textarea
               value={messageValue}
               onChange={(e) => setMessageValue(e.target.value)}
+              required
               className="form-control"
               rows="3"></textarea>
             <button onClick={onSendMessage} type="button" className="btn btn-primary">
               Отправить
           </button>
           </form>
-        </div>
-        <div>
-
         </div>
       </div>
     </div>
