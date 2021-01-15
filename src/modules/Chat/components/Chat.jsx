@@ -1,13 +1,12 @@
 import React from 'react';
 import socket from '../../../socket';
 import classNames from 'classnames'
-import { getHours, getMinutes } from 'date-fns';
+import { NavLink } from 'react-router-dom';
 
 
 function Chat({ users, messages, userName, roomId, onAddMessage, onJoin }) {
   const [messageValue, setMessageValue] = React.useState('');
   const messagesRef = React.useRef(null);
-  let values = {}
   // values.roomId=roomId
   // values.userName = localStorage.userName
   // onJoin(values)
@@ -35,63 +34,68 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin }) {
   React.useEffect(() => {
     let test;
     let values = {}
-    if (localStorage.userName == undefined) {
+    if (localStorage.userName === undefined) {
 
       test = prompt("Введите ваше имя", 'Username');
-      if (test == "") {
+      if (test === "") {
+        test = "Anonymus";
+      }
+      if (test === null) {
         test = "Anonymus";
       }
       localStorage.userName = test;
     }
-      values.roomId = roomId
-      values.userName = localStorage.userName
-      onJoin(values)
-    }, [])
+    values.roomId = roomId
+    values.userName = localStorage.userName
+    onJoin(values)
+  }, [])
   let index = 0;
   return (
-
-    <div className="chat">
-      <div className="chat-users">
-        Комната: <b>{roomId}</b>
-        <hr />
-        <b>Онлайн ({users.length}):</b>
-        <ul>
-          {users.map((name, index) => (
-            <li key={name + index}>{name}</li>
-          ))}
-        </ul>
-      </div>
-      <div className="chat-messages">
-        <div ref={messagesRef} className="messages">
-          {messages.map((message) => (
-            <div key={index++} className={classNames(`message`, { "message--isme": message.userName == userName })}>
-              <div className="message__content">
-                <div className="message__info">
-                  <span className="message__date">{message.userName}:</span>
-                  <div className="message__bubble">
-                    <div className="message__text">
-                      <p>{message.text}</p>
+    <div>
+      <a href="/room">Rooms</a>
+      <div className="chat">
+        <div className="chat-users">
+          Комната: <b>{roomId}</b>
+          <hr />
+          <b>Онлайн ({users.length}):</b>
+          <ul>
+            {users.map((name, index) => (
+              <li key={name + index}>{name}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="chat-messages">
+          <div ref={messagesRef} className="messages">
+            {messages.map((message) => (
+              <div key={index++} className={classNames(`message`, { "message--isme": message.userName == userName })}>
+                <div className="message__content">
+                  <div className="message__info">
+                    <span className="message__date">{message.userName}:</span>
+                    <div className="message__bubble">
+                      <div className="message__text">
+                        <p>{message.text}</p>
+                      </div>
                     </div>
+                    <span className="message__date">{message.time}</span>
                   </div>
-                  <span className="message__date">{message.time}</span>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-        <form>
-          <textarea
-            value={messageValue}
-            onChange={(e) => setMessageValue(e.target.value)}
-            className="form-control"
-            rows="3"></textarea>
-          <button onClick={onSendMessage} type="button" className="btn btn-primary">
-            Отправить
+            ))}
+          </div>
+          <form>
+            <textarea
+              value={messageValue}
+              onChange={(e) => setMessageValue(e.target.value)}
+              className="form-control"
+              rows="3"></textarea>
+            <button onClick={onSendMessage} type="button" className="btn btn-primary">
+              Отправить
           </button>
-        </form>
-      </div>
-      <div>
-        
+          </form>
+        </div>
+        <div>
+
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom'
 import { Route } from 'react-router-dom'
 import reducer from './reducer';
 import socket from './socket';
@@ -73,6 +72,7 @@ function App() {
     socket.on('ROOM:SET_USERS', setUsers);
     socket.on('ROOM:NEW_MESSAGE', addMessage);
     getRooms();
+    socket.on('ROOM:USERS_REFRESH', setUsers);
   }, [])
 
   return (

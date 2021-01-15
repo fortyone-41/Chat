@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button, Form, Input  } from 'antd';
 import { UserOutlined} from '@ant-design/icons';
 import axios from 'axios';
@@ -11,12 +11,12 @@ const Modal = ({onJoin}) => {
     const onFinish = async (values) => {
         setLoading(true);
         await axios.post("/rooms", values);
-        
+
         setTimeout(() => {
             setLoading(false)
-            onJoin(values);
+            onJoin(values); 
             history.push("/room/"+values.roomId);
-        },1000)
+        },3000)
         
     };
     return (

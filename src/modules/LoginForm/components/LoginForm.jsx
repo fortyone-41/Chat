@@ -2,7 +2,6 @@ import React from 'react';
 import { Button, Block } from '../../../components/Components'
 import { Form, Input } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import axios from 'axios';
 import {  useHistory  } from 'react-router-dom';
 
 
@@ -19,7 +18,7 @@ const Auth = (props) => {
     };
 
     React.useEffect(() => {
-        if(localStorage.userName != undefined){
+        if(localStorage.userName !== undefined){
             history.push("/room");
         }
     },[])
