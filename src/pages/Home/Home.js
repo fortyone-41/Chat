@@ -1,31 +1,55 @@
 import React from 'react';
-import { BrowserRouter, NavLink, Route } from 'react-router-dom';
+import ReactDOM from 'react-dom'
+import { NavLink, Route } from 'react-router-dom';
 import axios from 'axios';
 
 import { Chat } from '../../modules/index';
 import Modal from '../../modules/Modal/Modal';
 
 
-const Home = ({ users, messages, userName, room, onAddMessage, onLogin, auth, onJoin, rooms }) => {
-    let values = {};
-    const intoChat1 = async () => {
-        values.userName= localStorage.userName;
-        values.roomId = 1;
-        //await axios.post("/rooms", values);
-        onJoin(values);
+const Home = ({ users, messages, userName, onAddMessage, onJoin, rooms }) => {
+    let i = 0;
+    const videoRef = React.createRef();
+    const localVideo = videoRef.current;
+   
+      let localStream;
+    let pc1;
+    let pc2;
+    const offerOptions = {
+      offerToReceiveAudio: 1,
+      offerToReceiveVideo: 1
     };
-    const intoChat2 = async () => {
-        values.userName= localStorage.userName;
-        values.roomId = 2;
-        //await axios.post("/rooms", values);
-        onJoin(values);
+
+    function getName(pc) {
+      return (pc === pc1) ? 'pc1' : 'pc2';
+    }
+
+    function getOtherPc(pc) {
+      return (pc === pc1) ? pc2 : pc1;
+    }
+    async function start() {
+        console.log('Start')
+        console.log('Requesting local stream');
+       
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+          console.log('Received local stream');
+          localVideo.srcObject = stream;
+          localStream = stream;
+          
+      } catch (e) {
+          alert(`getUserMedia() error: ${e.name}`);
+      }
     };
     return (
         <section className="home">
-            <NavLink onClick={intoChat1} to="/room/1">Chat #1</NavLink>
-            <NavLink onClick={intoChat2} to="/room/2">Chat #2</NavLink>
-                <Route path="/room/1" render={() => <Chat users={users} messages={messages} userName={userName} roomId={1} onAddMessage={onAddMessage} onLogin={onLogin} auth={auth} />} />
-                <Route path="/room/2" render={() => <Chat users={users} messages={messages} userName={userName} roomId={2} onAddMessage={onAddMessage} onLogin={onLogin} auth={auth} />} />
+            <Modal onJoin={onJoin} />
+            {rooms.map((name) => (
+                <Route key={i++} exact path={"/room/" + name} render={() => <Chat users={users} messages={messages} userName={userName} roomId={name} onAddMessage={onAddMessage} onJoin={onJoin} />} />))}
+            <div>
+                <video autoplay id="localVideo" ref={videoRef} playsInline autoPlay muted></video>
+                <button onClick={start}>Start</button>
+            </div>
         </section>
     );
 }

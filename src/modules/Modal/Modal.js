@@ -11,8 +11,13 @@ const Modal = ({onJoin}) => {
     const onFinish = async (values) => {
         setLoading(true);
         await axios.post("/rooms", values);
-        onJoin(values);
-        history.push("/"+values.roomId);
+        
+        setTimeout(() => {
+            setLoading(false)
+            onJoin(values);
+            history.push("/room/"+values.roomId);
+        },1000)
+        
     };
     return (
         <div>
@@ -25,7 +30,7 @@ const Modal = ({onJoin}) => {
                         onFinish={onFinish}
                     >
                         <Form.Item
-                            name="userName"
+                            name="roomId"
                             rules={[
                                 {
                                     required: true,

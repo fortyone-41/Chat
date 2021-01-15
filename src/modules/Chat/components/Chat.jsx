@@ -1,20 +1,30 @@
 import React from 'react';
 import socket from '../../../socket';
 import classNames from 'classnames'
+import { getHours, getMinutes } from 'date-fns';
 
 
-function Chat({ users, messages, userName, roomId, onAddMessage }) {
+function Chat({ users, messages, userName, roomId, onAddMessage, onJoin }) {
   const [messageValue, setMessageValue] = React.useState('');
   const messagesRef = React.useRef(null);
+  let values = {}
+  // values.roomId=roomId
+  // values.userName = localStorage.userName
+  // onJoin(values)
 
   const onSendMessage = () => {
+    let date = new Date();
+    let min = date.getMinutes();
+    if (min < 10) {
+      min = '0' + min.toString();
+    }
     socket.emit('ROOM:NEW_MESSAGE', {
       userName,
       roomId,
       text: messageValue,
-      time: Date.now(),
+      time: date.getHours() + ':' + min,
     });
-    onAddMessage({ userName, text: messageValue, time: Date.now() });
+    onAddMessage({ userName, text: messageValue, time: date.getHours() + ':' + min });
     setMessageValue('');
   };
 
@@ -22,8 +32,22 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
     messagesRef.current.scrollTo(0, 99999);
   }, [messages]);
 
+  React.useEffect(() => {
+    let test;
+    let values = {}
+    if (localStorage.userName == undefined) {
 
-
+      test = prompt("Введите ваше имя", 'Username');
+      if (test == "") {
+        test = "Anonymus";
+      }
+      localStorage.userName = test;
+    }
+      values.roomId = roomId
+      values.userName = localStorage.userName
+      onJoin(values)
+    }, [])
+  let index = 0;
   return (
 
     <div className="chat">
@@ -40,10 +64,17 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
       <div className="chat-messages">
         <div ref={messagesRef} className="messages">
           {messages.map((message) => (
-            <div className={classNames(`message`, { "message--isme": message.userName == userName })}>
-              <p>{message.text}</p>
-              <div>
-                <span>User: {message.userName} -- time: {message.time}</span>
+            <div key={index++} className={classNames(`message`, { "message--isme": message.userName == userName })}>
+              <div className="message__content">
+                <div className="message__info">
+                  <span className="message__date">{message.userName}:</span>
+                  <div className="message__bubble">
+                    <div className="message__text">
+                      <p>{message.text}</p>
+                    </div>
+                  </div>
+                  <span className="message__date">{message.time}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -58,6 +89,9 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
             Отправить
           </button>
         </form>
+      </div>
+      <div>
+        
       </div>
     </div>
   );

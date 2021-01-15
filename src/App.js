@@ -7,7 +7,6 @@ import axios from 'axios';
 
 import './styles/index.scss'
 import { Auth, Home } from "./pages/index";
-import { Button } from 'antd';
 
 
 
@@ -61,9 +60,6 @@ function App() {
 
   };
 
-  React.useEffect(() => {
-    getRooms()
-  })
 
   const addMessage = (message) => {
     dispatch({
@@ -76,12 +72,13 @@ function App() {
     socket.on('ROOM:JOINED', setUsers)
     socket.on('ROOM:SET_USERS', setUsers);
     socket.on('ROOM:NEW_MESSAGE', addMessage);
+    getRooms();
   }, [])
 
   return (
     <div className="wrapper">
        <Route exact path="/" render={() =><Auth onLogin={onLogin} socket={socket} /> } />
-        <Route exact path="/room" render={() => <Home {...state} onAddMessage={addMessage} onJoin={onJoin}/> } />
+        <Route path="/room" render={() => <Home {...state} onAddMessage={addMessage} onJoin={onJoin}/> } />
     </div>
   );
 }
