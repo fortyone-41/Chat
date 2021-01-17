@@ -69,10 +69,6 @@ io.on('connection', (socket) => {
     const messages = [...rooms.get(roomId).get('messages').values()]    //get messages in room
     socket.to(roomId).broadcast.emit('ROOM:JOINED', users1);  //refresh users list for all 
     socket.emit('ROOM:SET_USERS', users1);
-
-    // if (!users1[socket.id]) {
-    //   users1[socket.id] = userName;
-    // }
     socket.emit("yourID", socket.id);
   })
   socket.on('ROOM:NEW_MESSAGE', ({ roomId, userName, text, time }) => {  //event new message
@@ -93,14 +89,25 @@ io.on('connection', (socket) => {
       }
     });
   });
-  
+
+  socket.on("closeCall", () => {
+    socket.emit("callDroping")
+  })
 
   socket.on("callUser", (data) => {
-    io.to(data.userToCall).emit('hey', { signal: data.signalData, from: data.from, fromName: data.fromName });
+    io.to(data.userToCall).emit('incomingCall', { signal: data.signalData, from: data.from, fromName: data.fromName });
   })
+
+  socket.on('end', function () {
+    socket.disconnect(0);
+  });
 
   socket.on("acceptCall", (data) => {
     io.to(data.to).emit('callAccepted', data.signal);
+  })
+
+  socket.on("dropCall", (data) => {
+    io.to(data.to).emit('callDropped', data.signal);
   })
   console.log('user connected', socket.id);
 })

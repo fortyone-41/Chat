@@ -1,7 +1,8 @@
 import React from 'react';
 import classNames from 'classnames'
-import { Button } from 'antd'
+import { Button, Modal } from 'antd'
 import Peer from "simple-peer";
+import { Socket } from 'socket.io-client';
 
 
 function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket }) {
@@ -19,9 +20,12 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   const constraints = {
     audio: true,
     video: {
-        facingMode: 'user'
+      facingMode: 'user'
     }
-}
+  }
+  let UserVideo;
+  let PartnerVideo;
+  let incomingCall;
 
   const onSendMessage = () => {  //function sending message
     let date = new Date();
@@ -60,8 +64,6 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   React.useEffect(() => {  //checking for inputted name, if not inputted, show window with input field for inputing name
     let test;
     let values = {}
-    setStream();
-    setCallerSignal();
     if (localStorage.userName === undefined) {
 
       test = prompt("Введите ваше имя", 'Username');
@@ -76,7 +78,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     values.roomId = roomId
     values.userName = localStorage.userName
     onJoin(values)
-    try{
+    try {
       navigator.mediaDevices.getUserMedia(constraints).then(stream => {
         setStream(stream);
         if (userVideo.current) {
@@ -84,7 +86,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
         }
       })
     }
-    catch(error){
+    catch (error) {
       if (error.name === 'ConstraintNotSatisfiedError') {
         const v = constraints.video;
         errorMsg(`The resolution ${v.width.exact}x${v.height.exact} px is not supported by your device.`);
@@ -95,25 +97,26 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       }
       errorMsg(`getUserMedia error: ${error.name}`, error);
     }
-    
-
-
 
     socket.on("yourID", (id) => {
       setYourID(id);
     })
 
-    socket.on("hey", (data) => {
+    socket.on("incomingCall", (data) => {
       setReceivingCall(true);
       setCaller(data.from);
       setCallerName(data.fromName);
       setCallerSignal(data.signal);
     })
-  }, [])
 
-  let index = 0;
+  }, [])
+  ////////////////////////////////////////
 
   function callPeer(id) {
+
+    if (partnerVideo.current) {
+      dropCall();
+    }
     const peer = new Peer({
       initiator: true,
       trickle: false,
@@ -134,7 +137,6 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       },
       stream: stream,
     });
-
     peer.on("signal", data => {
       socket.emit("callUser", { userToCall: id, signalData: data, from: yourID, fromName: userName })
     })
@@ -145,13 +147,47 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       }
     });
 
+    socket.on("callDroping", () => {
+      peer.destroy(id)
+      setCallAccepted(false)
+      setReceivingCall(false)
+    })
+
     socket.on("callAccepted", signal => {
       setCallAccepted(true);
       peer.signal(signal);
+
+    })
+    socket.on("callDropped", () => {
+      peer.destroy(id)
+      setCallAccepted(false)
+      setReceivingCall(false)
     })
 
   }
+  ////////////////////////////////////////
 
+  function dropCall() {
+    setReceivingCall(false);
+    setCallAccepted(false);
+    const peer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream: stream,
+    });
+    debugger
+    if (callerSignal == undefined) {
+      socket.emit("closeCall")
+    }
+    else {
+      peer.on("signal", data => {
+        socket.emit("dropCall", { signal: {}, to: caller })
+      })
+      peer.signal(callerSignal)
+    }
+
+  }
+  ////////////////////////////////////////
 
   function acceptCall() {
     setCallAccepted(true);
@@ -162,42 +198,75 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       stream: stream,
     });
     peer.on("signal", data => {
-      socket.emit("acceptCall", { signal: data, to: caller })
+      debugger
+      if (caller == undefined) {
+        setCallAccepted(false)
+      }
+      else {
+        socket.emit("acceptCall", { signal: data, to: caller })
+      }
     })
 
     peer.on("stream", stream => {
       partnerVideo.current.srcObject = stream;
     });
-
     peer.signal(callerSignal);
   }
-  let UserVideo;
+  ////////////////////////////////////////
+
   if (stream) {
     UserVideo = (
       <video className="my-video" playsInline muted ref={userVideo} autoPlay />
     );
   }
 
-  let PartnerVideo;
+
   if (callAccepted) {
     PartnerVideo = (
       <video className="user-video" playsInline ref={partnerVideo} autoPlay />
     );
   }
 
-  let incomingCall;
-  let conf;
+  let visible = false;
+  let confirmLoading = false;
+  let modalText = '';
+
+  const showModal = () => {
+    visible = true;
+  };
+
+  const handleOk = () => {
+    confirmLoading = true;
+    visible = false;
+    confirmLoading = false;
+    if (partnerVideo.current) {
+      dropCall();
+    }
+    acceptCall();
+  };
+
+  const handleCancel = () => {
+    console.log('hello')
+    visible = false;
+    dropCall();
+  };
+
   if (receivingCall) {
-     incomingCall = (
-       <div>
-         <h1>{callerName} is calling you</h1>
-         <button onClick={acceptCall}>Accept</button>
-       </div>
-      
-      
-     )
+    showModal();
+    modalText = `${callerName} is calling you`;
+    incomingCall = (
+
+      <Modal
+        title="Title"
+        visible={visible}
+        onOk={handleOk}
+        confirmLoading={confirmLoading}
+        onCancel={handleCancel}
+      >
+        <p>{modalText}</p>
+      </Modal>
+    )
   }
-debugger
   return (
     <div>
       <a href="/room">Rooms</a>
@@ -212,11 +281,11 @@ debugger
             ))}
           </ul>
         </div>
-        
+
         <div className="chat-messages">
           <div ref={messagesRef} className="messages">
-            {messages.map((message) => (
-              <div key={index++} className={classNames(`message`, { "message--isme": message.userName == userName })}>
+            {messages.map((message, index) => (
+              <div key={index} className={classNames(`message`, { "message--isme": message.userName === userName })}>
                 <div className="message__content">
                   <div className="message__info">
                     <span className="message__date">{message.userName}:</span>
@@ -249,7 +318,7 @@ debugger
         {PartnerVideo}
       </div>
       {Object.keys(users).map((key, index) => {
-        
+
         if (users[key][0] === yourID) {
           return null;
         }
@@ -257,7 +326,9 @@ debugger
           <Button type="primary" key={index} style={{ width: "720px" }} onClick={() => callPeer(users[key][0])} htmlType="submit" size="large">Call {users[key][1]}</Button>
         );
       })}
+      <button onClick={dropCall}>drop</button>
       {callAccepted ? '' : incomingCall}
+
     </div>
   );
 }

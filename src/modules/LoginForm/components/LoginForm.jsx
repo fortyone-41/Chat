@@ -8,7 +8,6 @@ import {  useHistory  } from 'react-router-dom';
 
 
 const Auth = (props) => {
-    const [userName, setUserName] = React.useState('');
     const [isLoading, setLoading] = React.useState(false);
     let history = useHistory();
     const onFinish = async (values) => {  //function inputing name
@@ -48,7 +47,7 @@ const Auth = (props) => {
                                 },
                             ]}
                         >
-                            <Input prefix={<UserOutlined className="site-form-item-icon" />} value={userName} placeholder="Name" />
+                            <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="Name" />
                         </Form.Item>
                         <Form.Item>
                         <Button type="primary" htmlType="submit" size="large">{!isLoading ? 'Перейти в комнаты' : 'Переход в комнаты...'}</Button>

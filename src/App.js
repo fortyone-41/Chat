@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, useHistory } from 'react-router-dom'
+import { Route } from 'react-router-dom'
 import reducer from './reducer';
 import socket from './socket';
 import axios from 'axios';
@@ -19,7 +19,6 @@ function App() {
     rooms: [],
   })
 
-  let history = useHistory();
   const getRooms = async () => {    //get array rooms
     const data2 = await axios.get(`/get_rooms`);
     dispatch({        //dispatching rooms in state
@@ -34,17 +33,17 @@ function App() {
     //   alert("Room is overload")
     //   history.push("/room")
     // } else {
-      dispatch({
-        type: 'JOINED',
-        payload: values,
-      });
-      socket.emit('ROOM:JOIN', values);
+    dispatch({
+      type: 'JOINED',
+      payload: values,
+    });
+    socket.emit('ROOM:JOIN', values);
 
-      dispatch({        //dispatching data in state
-        type: 'SET_DATA',
-        payload: data,
-      });
-      getRooms()
+    dispatch({        //dispatching data in state
+      type: 'SET_DATA',
+      payload: data,
+    });
+    getRooms()
     // }
 
   }
