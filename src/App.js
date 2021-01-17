@@ -1,38 +1,52 @@
 import React from 'react';
-import ReactDOM from 'react-dom'
-import { Route } from 'react-router-dom'
+import { Route, useHistory } from 'react-router-dom'
 import reducer from './reducer';
 import socket from './socket';
 import axios from 'axios';
 
 import './styles/index.scss'
 import { Auth, Home } from "./pages/index";
-import { Button } from 'antd';
-
-
 
 
 
 function App() {
   const [state, dispatch] = React.useReducer(reducer, {
-    joined: false,
+    auth: false,
     roomId: null,
     userName: null,
-    users: [],
+    users: {},
     messages: [],
+    rooms: [],
   })
 
-  const onLogin = async (values) => {
-    dispatch({
-      type: 'JOINED',
-      payload: values,
-    });
-    socket.emit('ROOM:JOIN', values);
-    const { data } = await axios.get(`/rooms/${values.roomId}`);
-    dispatch({
-      type: 'SET_DATA',
-      payload: data,
-    });
+  let history = useHistory();
+  const getRooms = async () => {    //get array rooms
+    const data2 = await axios.get(`/get_rooms`);
+    dispatch({        //dispatching rooms in state
+      type: 'GET_ROOMS',
+      payload: data2,
+    })
+  }
+
+  const onJoin = async (values) => {
+    const { data } = await axios.get(`/rooms/${values.roomId}`);      //get data from current room
+    // if (data.users.length >= 2) {
+    //   alert("Room is overload")
+    //   history.push("/room")
+    // } else {
+      dispatch({
+        type: 'JOINED',
+        payload: values,
+      });
+      socket.emit('ROOM:JOIN', values);
+
+      dispatch({        //dispatching data in state
+        type: 'SET_DATA',
+        payload: data,
+      });
+      getRooms()
+    // }
+
   }
 
   const setUsers = (users) => {
@@ -40,7 +54,9 @@ function App() {
       type: 'SET_USERS',
       payload: users,
     });
+
   };
+
 
   const addMessage = (message) => {
     dispatch({
@@ -50,15 +66,16 @@ function App() {
   };
 
   React.useEffect(() => {
+    socket.on('ROOM:JOINED', setUsers)
     socket.on('ROOM:SET_USERS', setUsers);
     socket.on('ROOM:NEW_MESSAGE', addMessage);
+    getRooms();
   }, [])
 
   return (
     <div className="wrapper">
-
-      {!state.joined ? <Route exact path={["/", "/login", "/register"]} render={(props) => <Auth onLogin={onLogin} socket={socket} />} /> : <Home {...state} onAddMessage={addMessage} />}
-
+      <Route exact path="/" render={() => <Auth socket={socket} />} />
+      <Route path="/room" render={() => <Home {...state} socket={socket} onAddMessage={addMessage} onJoin={onJoin} />} />
     </div>
   );
 }

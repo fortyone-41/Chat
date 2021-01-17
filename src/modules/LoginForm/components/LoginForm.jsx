@@ -1,24 +1,28 @@
 import React from 'react';
 import { Button, Block } from '../../../components/Components'
 import { Form, Input } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom'
-import axios from 'axios';
+import { UserOutlined } from '@ant-design/icons';
+import {  useHistory  } from 'react-router-dom';
 
 
 
 
 const Auth = (props) => {
-    const [roomId, setRoomId] = React.useState('');
     const [userName, setUserName] = React.useState('');
     const [isLoading, setLoading] = React.useState(false);
-
-    const onFinish = async (values) => {
+    let history = useHistory();
+    const onFinish = async (values) => {  //function inputing name
         setLoading(true);
-        await axios.post("/rooms", values);
-        props.onLogin(values);
+        localStorage.userName= values.userName;  //writing name in local storage
+        history.push("/room");      //going to the rooms page
     };
 
+    React.useEffect(() => {
+        if(localStorage.userName !== undefined){  //if inputted name, going to the rooms page
+            history.push("/room");
+        }
+    },[])
+    
     return (
         < section className="auth" >
             <div className="auth__content">
@@ -36,34 +40,18 @@ const Auth = (props) => {
                         onFinish={onFinish}
                     >
                         <Form.Item
-                            name="roomId"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please input your Username!',
-                                },
-                            ]}
-                        >
-                            <Input prefix={<UserOutlined className="site-form-item-icon" />} value={roomId} placeholder="Username" />
-                        </Form.Item>
-                        <Form.Item
                             name="userName"
                             rules={[
                                 {
                                     required: true,
-                                    message: 'Please input your Password!',
+                                    message: 'Please input your Name!',
                                 },
                             ]}
                         >
-                            <Input
-                                prefix={<LockOutlined className="site-form-item-icon" />}
-                                type="password"
-                                placeholder="Password"
-                            />
+                            <Input prefix={<UserOutlined className="site-form-item-icon" />} value={userName} placeholder="Name" />
                         </Form.Item>
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" size="large">{!isLoading ? 'Войти в чат' : 'Вход в чат...'}</Button>
-                            <Link className="auth__register-link" to='/register'>Зарегистрироваться</Link>
+                        <Button type="primary" htmlType="submit" size="large">{!isLoading ? 'Перейти в комнаты' : 'Переход в комнаты...'}</Button>
                         </Form.Item>
                     </Form>
                 </Block>
