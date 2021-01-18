@@ -2,7 +2,6 @@ import React from 'react';
 import classNames from 'classnames'
 import { Button, Modal } from 'antd'
 import Peer from "simple-peer";
-import { Socket } from 'socket.io-client';
 
 
 function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket }) {
@@ -17,6 +16,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   const [callAccepted, setCallAccepted] = React.useState(false);
   const userVideo = React.useRef();
   const partnerVideo = React.useRef();
+  const [mediaError, setMediaError] = React.useState(false);
   const constraints = {
     audio: true,
     video: {
@@ -26,6 +26,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   let UserVideo;
   let PartnerVideo;
   let incomingCall;
+
 
   const onSendMessage = () => {  //function sending message
     let date = new Date();
@@ -37,14 +38,20 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     if (messageValue === "") {
       alert("Введите текст сообщения")
     } else {
-      socket.emit('ROOM:NEW_MESSAGE', {   //emitting event new message
-        userName,
-        roomId,
-        text: messageValue,
-        time: date.getHours() + ':' + min,
-      });
-      onAddMessage({ userName, text: messageValue, time: date.getHours() + ':' + min });
-      setMessageValue('');
+      if (messageValue.match(/^[ ]+$/)) { // В значении только пробелы
+        setMessageValue('');
+        alert("Введите текст сообщения");
+      } else {
+        socket.emit('ROOM:NEW_MESSAGE', {   //emitting event new message
+          userName,
+          roomId,
+          text: messageValue,
+          time: date.getHours() + ':' + min,
+        });
+        onAddMessage({ userName, text: messageValue, time: date.getHours() + ':' + min });
+        setMessageValue('');
+      }
+
     }
 
   };
@@ -64,7 +71,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   React.useEffect(() => {  //checking for inputted name, if not inputted, show window with input field for inputing name
     let test;
     let values = {}
-    if (localStorage.userName === undefined) {
+    if (localStorage.userName === undefined  || localStorage.userName === "") {
 
       test = prompt("Введите ваше имя", 'Username');
       if (test === "") {
@@ -78,63 +85,62 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     values.roomId = roomId
     values.userName = localStorage.userName
     onJoin(values)
-    try {
-      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-        setStream(stream);
-        if (userVideo.current) {
-          userVideo.current.srcObject = stream;
-        }
-      })
+    function hasGetUserMedia() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     }
-    catch (error) {
-      if (error.name === 'ConstraintNotSatisfiedError') {
-        const v = constraints.video;
-        errorMsg(`The resolution ${v.width.exact}x${v.height.exact} px is not supported by your device.`);
-      } else if (error.name === 'PermissionDeniedError') {
-        errorMsg('Permissions have not been granted to use your camera and ' +
-          'microphone, you need to allow the page access to your devices in ' +
-          'order for the demo to work.');
+    if (hasGetUserMedia()) {
+      try {
+        navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+          setStream(stream);
+          if (userVideo.current) {
+            userVideo.current.srcObject = stream;
+          }
+        })
       }
-      errorMsg(`getUserMedia error: ${error.name}`, error);
+      catch (error) {
+        if (error.name === 'ConstraintNotSatisfiedError') {
+          const v = constraints.video;
+          errorMsg(`The resolution ${v.width.exact}x${v.height.exact} px is not supported by your device.`);
+        } else if (error.name === 'PermissionDeniedError') {
+          errorMsg('Permissions have not been granted to use your camera and ' +
+            'microphone, you need to allow the page access to your devices in ' +
+            'order for the demo to work.');
+        }
+        errorMsg(`getUserMedia error: ${error.name}`, error);
+      }
+
+      socket.on("yourID", (id) => {
+        setYourID(id);
+      })
+
+      socket.on("incomingCall", (data) => {
+        setReceivingCall(true);
+        setCaller(data.from);
+        setCallerName(data.fromName);
+        setCallerSignal(data.signal);
+      })
+
+      socket.on("closeConnect", () => {
+        setReceivingCall(false);
+        setCallAccepted(false);
+      })
+    } else {
+      setMediaError(true)
+      alert("Возникли проблемы с получением ваших медиданных");
     }
 
-    socket.on("yourID", (id) => {
-      setYourID(id);
-    })
-
-    socket.on("incomingCall", (data) => {
-      setReceivingCall(true);
-      setCaller(data.from);
-      setCallerName(data.fromName);
-      setCallerSignal(data.signal);
-    })
 
   }, [])
   ////////////////////////////////////////
-
+  let idCallUser;
   function callPeer(id) {
-
+    idCallUser = id;
     if (partnerVideo.current) {
       dropCall();
     }
     const peer = new Peer({
       initiator: true,
       trickle: false,
-      config: {
-
-        iceServers: [
-          {
-            urls: "stun:numb.viagenie.ca",
-            username: "sultan1640@gmail.com",
-            credential: "98376683"
-          },
-          {
-            urls: "turn:numb.viagenie.ca",
-            username: "sultan1640@gmail.com",
-            credential: "98376683"
-          }
-        ]
-      },
       stream: stream,
     });
     peer.on("signal", data => {
@@ -147,50 +153,30 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       }
     });
 
-    socket.on("callDroping", () => {
-      peer.removeStream(stream);
-      peer.destroy(id)
-      setCallAccepted(false)
-      setReceivingCall(false)
-    })
-
     socket.on("callAccepted", signal => {
       setCallAccepted(true);
       peer.signal(signal);
-
-    })
-    socket.on("callDropped", () => {
-      peer.destroy(id)
-      setCallAccepted(false)
-      setReceivingCall(false)
     })
 
   }
   ////////////////////////////////////////
 
   function dropCall() {
-    setReceivingCall(false);
-    setCallAccepted(false);
-    const peer = new Peer({
-      initiator: false,
-      trickle: false,
-      stream: stream,
-    });
-    debugger
     if (callerSignal == undefined) {
-      socket.emit("closeCall")
+      socket.emit("dropCall", { to: idCallUser })
     }
     else {
-      peer.on("signal", data => {
-        socket.emit("dropCall", { signal: {}, to: caller })
-      })
-      peer.signal(callerSignal)
+      socket.emit("dropCall", { to: caller })
     }
-
+    setReceivingCall(false);
+    setCallAccepted(false);
   }
   ////////////////////////////////////////
 
   function acceptCall() {
+    if (partnerVideo.current) {
+      dropCall();
+    }
     setCallAccepted(true);
 
     const peer = new Peer({
@@ -203,12 +189,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     })
 
     peer.on("stream", stream => {
-      if(stream != null){
-        partnerVideo.current.srcObject = stream;
-      }else{
-        setCallAccepted(false)
-      }
-      
+      partnerVideo.current.srcObject = stream;
     });
     peer.signal(callerSignal);
   }
@@ -239,9 +220,6 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     confirmLoading = true;
     visible = false;
     confirmLoading = false;
-    if (partnerVideo.current) {
-      dropCall();
-    }
     acceptCall();
   };
 
@@ -253,11 +231,11 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
 
   if (receivingCall) {
     showModal();
-    modalText = `${callerName} is calling you`;
+    modalText = `Входящий вызов от ${callerName}(а) `;
     incomingCall = (
 
       <Modal
-        title="Title"
+        title="Входящий вызов"
         visible={visible}
         onOk={handleOk}
         confirmLoading={confirmLoading}
@@ -267,6 +245,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       </Modal>
     )
   }
+  debugger
   return (
     <div>
       <a href="/room">Rooms</a>
@@ -317,7 +296,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
         {UserVideo}
         {PartnerVideo}
       </div>
-      {Object.keys(users).map((key, index) => {
+      { (mediaError == false) ? Object.keys(users).map((key, index) => {
 
         if (users[key][0] === yourID) {
           return null;
@@ -325,8 +304,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
         return (
           <Button type="primary" key={index} style={{ width: "720px" }} onClick={() => callPeer(users[key][0])} htmlType="submit" size="large">Call {users[key][1]}</Button>
         );
-      })}
-      <button onClick={dropCall}>drop</button>
+      }) : ''}
       {callAccepted ? '' : incomingCall}
 
     </div>

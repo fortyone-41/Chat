@@ -98,18 +98,13 @@ io.on('connection', (socket) => {
     io.to(data.userToCall).emit('incomingCall', { signal: data.signalData, from: data.from, fromName: data.fromName });
   })
 
-  socket.on('end', function () {
-    socket.disconnect(0);
-  });
-
   socket.on("acceptCall", (data) => {
     io.to(data.to).emit('callAccepted', data.signal);
   })
 
   socket.on("dropCall", (data) => {
-    io.to(data.to).emit('callDropped', data.signal);
+    io.to(data.to).emit('closeConnect');
   })
-  console.log('user connected', socket.id);
 })
 
 

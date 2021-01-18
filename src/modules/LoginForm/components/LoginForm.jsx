@@ -17,7 +17,7 @@ const Auth = (props) => {
     };
 
     React.useEffect(() => {
-        if(localStorage.userName !== undefined){  //if inputted name, going to the rooms page
+        if(localStorage.userName !== undefined || localStorage.userName === ""){  //if inputted name, going to the rooms page
             history.push("/room");
         }
     },[])
