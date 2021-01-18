@@ -148,6 +148,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     });
 
     socket.on("callDroping", () => {
+      peer.removeStream(stream);
       peer.destroy(id)
       setCallAccepted(false)
       setReceivingCall(false)
@@ -198,17 +199,16 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
       stream: stream,
     });
     peer.on("signal", data => {
-      debugger
-      if (caller == undefined) {
-        setCallAccepted(false)
-      }
-      else {
-        socket.emit("acceptCall", { signal: data, to: caller })
-      }
+      socket.emit("acceptCall", { signal: data, to: caller })
     })
 
     peer.on("stream", stream => {
-      partnerVideo.current.srcObject = stream;
+      if(stream != null){
+        partnerVideo.current.srcObject = stream;
+      }else{
+        setCallAccepted(false)
+      }
+      
     });
     peer.signal(callerSignal);
   }
