@@ -1,5 +1,5 @@
 import {io} from 'socket.io-client';
-
-const socket = io()
+import Server from './addresServer'
+const socket = io(''+Server)
 
 export default socket

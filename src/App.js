@@ -3,7 +3,7 @@ import { Route } from 'react-router-dom'
 import reducer from './reducer';
 import socket from './socket';
 import axios from 'axios';
-
+import Server from './addresServer'
 import './styles/index.scss'
 import { Auth, Home } from "./pages/index";
 
@@ -20,7 +20,7 @@ function App() {
   })
 
   const getRooms = async () => {    //get array rooms
-    const data2 = await axios.get(`/get_rooms`);
+    const data2 = await axios.get(Server+'/get_rooms');
     dispatch({        //dispatching rooms in state
       type: 'GET_ROOMS',
       payload: data2,
@@ -28,7 +28,7 @@ function App() {
   }
 
   const onJoin = async (values) => {
-    const { data } = await axios.get(`/rooms/${values.roomId}`);      //get data from current room
+    const { data } = await axios.get(Server+`/rooms/${values.roomId}`);      //get data from current room
     // if (data.users.length >= 2) {
     //   alert("Room is overload")
     //   history.push("/room")

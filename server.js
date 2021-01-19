@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-
 const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server, {
@@ -11,7 +10,6 @@ const io = require('socket.io')(server, {
     credentials: true
   }
 });
-
 const rooms = new Map();
 
 rooms.set(    //create room with name "1"
@@ -28,8 +26,8 @@ rooms.set(    //create room with name "2"
     ['messages', []],
   ]),
 );
+app.use(cors())
 app.use(express.json());
-
 app.get('/rooms/:id', (req, res) => {   //get request for taking data in current room, if such room have
   const { id: roomId } = req.params;
   const obj = rooms.has(roomId)
@@ -106,7 +104,6 @@ io.on('connection', (socket) => {
     io.to(data.to).emit('closeConnect');
   })
 })
-
 
 server.listen(9999, (err) => {
   if (err) {

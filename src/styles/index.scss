@@ -14,7 +14,7 @@ html,
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   font-size: 14px;
   max-width: 40%;
-  margin: 100px auto;
+  margin:  auto;
   min-width: 720px;
 }
 
@@ -213,4 +213,8 @@ html,
     height: 100%;
     z-index: 1;
   }
+}
+
+.home{
+  margin-top: 50px
 }

@@ -3,13 +3,14 @@ import { Button, Form, Input } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
+import Server from '../../addresServer'
 
 const Modal = ({ onJoin }) => {
     let history = useHistory();
     const [isLoading, setLoading] = React.useState(false);
     const onFinish = async (values) => {  //function joining in room
         setLoading(true);
-        await axios.post("/rooms", values);
+        await axios.post(Server + "/rooms", values);
         setTimeout(() => {      //loading current room with delay in 3sec
             setLoading(false)
             onJoin(values);
@@ -25,6 +26,7 @@ const Modal = ({ onJoin }) => {
                     remember: true,
                 }}
                 onFinish={onFinish}
+                style={{ margin: "auto" }}
             >
                 <Form.Item
                     name="roomId"

@@ -12,7 +12,9 @@
     "cors": "^2.8.5",
     "date-fns": "^2.16.1",
     "express": "^4.17.1",
+    "express-force-ssl": "^0.3.2",
     "node-sass": "^4.14.1",
+    "node-static": "^0.7.11",
     "nodemon": "^2.0.6",
     "path-to-regexp": "^6.2.0",
     "react": "^17.0.1",
@@ -38,7 +40,6 @@
       "react-app/jest"
     ]
   },
-  "proxy": "http://127.0.0.1:9999",
   "browserslist": {
     "production": [
       ">0.2%",
