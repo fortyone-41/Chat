@@ -17,6 +17,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   const userVideo = React.useRef();
   const partnerVideo = React.useRef();
   const [mediaError, setMediaError] = React.useState(false);
+  const [callerData, setCallerData] = React.useState({})
   const constraints = {
     audio: true,
     video: {
@@ -26,7 +27,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   let UserVideo;
   let PartnerVideo;
   let visible = false;
-  let idCallUser;
+  const [idCallUser, setIdCallUser] = React.useState();
 
 
   const onSendMessage = () => {  //function sending message
@@ -114,18 +115,14 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
         setYourID(id);
       })
 
-      // socket.on('dropAlreadyCall', () => {
-      //   dropCall()
-      // })
 
       socket.on("incomingCall", (data) => {
         setReceivingCall(true);
-        setCaller(data.from);
-        setCallerName(data.fromName);
-        setCallerSignal(data.signal);
+        setCallerData(data);
       })
 
       socket.on("closeConnect", () => {
+        debugger
         setReceivingCall(false);
         setCallAccepted(false);
       })
@@ -137,42 +134,46 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
   ////////////////////////////////////////
 
   function callPeer(id) {
-    idCallUser = id;
-    if (partnerVideo.current) {
-      dropCall();
-    }
-    const peer = new Peer({
-      initiator: true,
-      trickle: false,
-      stream: stream,
-    });
-    peer.on("signal", data => {
-      socket.emit("callUser", { userToCall: id, signalData: data, from: yourID, fromName: userName })
-    })
+    debugger
 
-    peer.on("stream", stream => {
+      setIdCallUser(id)
       if (partnerVideo.current) {
-        partnerVideo.current.srcObject = stream;
+        dropCall();
       }
-    });
+      const peer = new Peer({
+        initiator: true,
+        trickle: false,
+        stream: stream,
+      });
+      peer.on("signal", data => {
+        socket.emit("callUser", { userToCall: id, signalData: data, from: yourID, fromName: userName })
+      })
+
+      peer.on("stream", stream => {
+        if (partnerVideo.current) {
+          partnerVideo.current.srcObject = stream;
+        }
+      });
 
 
 
-    socket.on("callAccepted", signal => {
-      setCallAccepted(true);
-      peer.signal(signal);
-    })
+      socket.on("callAccepted", signal => {
+        setCallAccepted(true);
+        if(!peer.destroyed)
+          peer.signal(signal);
+      })
+
   }
   ////////////////////////////////////////
 
   function dropCall() {  //function droping call 
+    debugger
     if (callerSignal === undefined) {  //if call going from the our side
       socket.emit("dropCall", { to: idCallUser })
     }
     else {
       socket.emit("dropCall", { to: caller })
     }
-    setReceivingCall(false);
     setCallAccepted(false);
   }
   ////////////////////////////////////////
@@ -181,20 +182,27 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
     if (partnerVideo.current) {  //if already have connect, , we reset it
       dropCall();
     }
-    setCallAccepted(true);
+    debugger
+    setCaller(callerData.from);
+    setCallerName(callerData.fromName);
+    setCallerSignal(callerData.signal);
+    setReceivingCall(false)
     const peer = new Peer({
       initiator: false,
       trickle: false,
       stream: stream,
     });
+    setCallAccepted(true);
     peer.on("signal", data => {
-      socket.emit("acceptCall", { signal: data, to: caller })
+      socket.emit("acceptCall", { signal: data, to: callerData.from })
     })
 
     peer.on("stream", stream => {
       partnerVideo.current.srcObject = stream;
     });
-    peer.signal(callerSignal);
+    if(!peer.destroyed)
+    peer.signal(callerData.signal);
+
   }
   ////////////////////////////////////////
 
@@ -219,17 +227,15 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
 
   const handleOk = () => {
     visible = false;
+
+    setCallAccepted(false);
     acceptCall();
   };
 
   const handleCancel = () => {
-    visible = false;
+    visible = false
     dropCall();
   };
-
-  if (receivingCall) {
-    showModal();
-  }
   return (
     <div>
       <a href="/room">Rooms</a>
@@ -289,14 +295,11 @@ function Chat({ users, messages, userName, roomId, onAddMessage, onJoin, socket 
           <Button type="primary" key={index} style={{ width: "720px" }} onClick={() => callPeer(users[key][0])} htmlType="submit" size="large">Call {users[key][1]}</Button>
         );
       }) : null}
-      {callAccepted ? visible = false : null}<div><Modal
-        title="Входящий вызов"
-        visible={visible}
-        onOk={handleOk}
-        onCancel={handleCancel}
-      >
-        <p>{`Входящий вызов от ${callerName}(а) `}</p>
-      </Modal>
+      {callAccepted ? visible = false : null}<div>
+        <Modal title="Входящий вызов..." visible={receivingCall} onOk={handleOk} onCancel={handleCancel}>
+          <p>{`Входящий вызов от ${callerData.fromName}(а) `}</p>
+        </Modal>
+        {receivingCall ? <button onClick={acceptCall}>ok</button> : null}
       </div>
     </div>
   );
